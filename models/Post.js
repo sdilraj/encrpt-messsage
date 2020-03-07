@@ -7,12 +7,12 @@ const PostSchema = mongoose.Schema({
     },
     
     //date: Data.now
-    data: {
+    date: {
         type: Date,
         default: Date.now
     },
 
-    encrptiontype: {
+    encryptiontype: {
         type: String,
         required: false
 

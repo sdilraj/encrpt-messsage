@@ -1,6 +1,27 @@
 <template>
 <div>
 
+ 
+<b-button v-b-modal.modal-1>Add Note</b-button>
+<b-modal id="modal-1" @show="resetModal"
+      @hidden="resetModal" @ok="handleOk" title="Add Your Note">
+    <form ref="form" @submit.stop.prevent="handleSubmit">
+        <b-form-group
+          :state="messageState"
+          label="Message"
+          label-for="name-input"
+          invalid-feedback="Message is required"
+        >
+          <b-form-input
+ 
+            v-model="message"
+            :state="messageState"
+
+            required
+          ></b-form-input>
+        </b-form-group>
+      </form>
+  </b-modal>
   <div class ="container">
     <h1> Latest Posts</h1>
     <!-- Create Post HERE -->
@@ -14,9 +35,11 @@
         v-bind:index="index"
         v-bind:key="post._id"
       >
-      <p>{{post.title}}</p>
-       <!-- {{ '${post.createdAt.getDate()}/${post.createdAt.getMonth()}/${post.createdAt.getFullYear()}' }}  -->
-        <p class= "text">{{post.text}}</p>
+     
+      <p>{{post.message}}</p>
+      <p>{{post.encryptionMessage}}</p>
+      <button v-on:click="deletePost(post._id)">Delete</button>
+      <button v-on:click="update(post._id)">Update</button>
 
       </div>
     </div>
@@ -34,24 +57,82 @@ export default {
     return {
       posts:[],
       error: '',
+      messageState: null,
+      message: '',
       text: ''
     }
   },
+  created: function() {
+    PostService.getPosts().then((response) => {
+      console.log(response.data)
+      this.posts = response.data;
+    }).catch(error => {
+      console.error(error);
+    })
+  },
+  methods: {
+    deletePost: function(id) {
+      PostService.deletePost(id).then(() => {
+        this.posts = this.posts.filter((post) => {
+          return post._id != id;
+        });
+      }).catch(error => {
+        console.log(error);
+      })
 
-created: function() {
-  PostService.getPosts().then((response) => {
-    console.log(response.data)
-    this.posts = response.data;
-  }).catch(error => {
-    console.error(error);
-  })
-},
+    },
+    updatePost: function(id) {
+      PostService.updatePost(id).then(() => {
+        
+      })
+    },
+
+    checkFormValidity() {
+        const valid = this.$refs.form.checkValidity()
+        this.messageState = valid
+        return valid
+      },
+      resetModal() {
+        this.message = ''
+        this.messageState = null
+      },
+      handleOk(bvModalEvt) {
+        // Prevent modal from closing
+        bvModalEvt.preventDefault()
+        // Trigger submit handler
+        this.handleSubmit()
+      },
+      handleSubmit() {
+        // Exit when the form isn't valid
+        var self = this;
+
+        if (!this.checkFormValidity()) {
+          return
+        }
+
+        PostService.insertPost({
+          message: self.message
+        }).then(() => {
+          return PostService.getPosts()
+        }).then(response => {
+          console.log(response);
+          self.posts = response.data;
+
+          // Hide the modal manually
+          self.$nextTick(() => {
+            self.$bvModal.hide('modal-prevent-closing')
+          })
+        });
+      }
+
+  }
 
 }
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
+
 div.container{
   max-width: 800px;
   margin: 0 auto;

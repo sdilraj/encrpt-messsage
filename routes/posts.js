@@ -21,7 +21,7 @@ router.get('/', async (req, res) => {
             }
 
             return {
-                ...post.toJSON(),
+               ...post.toObject(),
                 encyrptedMessage: encyrptedMessage
             }
         });
@@ -35,27 +35,45 @@ router.get('/', async (req, res) => {
 });
 
 function pigLatin(text) {
-    return text; // encrypt the message
+    var newText = text;
+    if(newText.slice(0,1).match(/[aeiouAEIOU]/)) {
+        newText = newText + "way";
+    }
+    else {
+        var moveLetters = "";
+        while(newText.slice(0,1).match(/[aeiouAEIOU]/)) {
+            moveLetters += newText.slice(0,1);
+            newText = newText.slice(1, newText.length);
+        }
+        newText = newText + moveLetters + "ay";
+    }
+    return newText;
 }
+
+
 
 function emoGize(text) {
     return text;
 }
 
+
+
 function letterScramble(text) {
-    return text; //random mix letter
+    var scramble = '';
+    text = text.split('');
+    while(text.length > 0) {
+        scramble += text.splice(text.length * Math.random() << 0,1);
+    }
+    return scramble; //random mix letter
 }
-
-
-
 
 
 // pig latin
 //Creating a Post
-router.post('/', async (req,rest) => {
+router.post('/', async (req,res) => {
     const post = new Post({
-        title: req.body.title,
-        description: req.body.description
+        message: req.body.message,
+        encryptiontype: req.body.encryptiontype
     });
     try {
         const savedPost = await post.save();
@@ -79,7 +97,7 @@ router.get('/:postId', async (req,res) => {
 
 
 //Updating a post
-router.patch('/:postId', async (req,res) => {
+router.post('/:postId', async (req,res) => {
     try {
         const updatePost = await Post.updateOne(
             { _id: req.params.postId }, 

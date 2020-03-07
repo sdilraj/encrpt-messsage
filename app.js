@@ -19,13 +19,6 @@ app.use('/api/posts', postsRoute);
 
 
 
-//Routes
-app.get('/',(req, res) => {
-    res.send('we are home');
-});
-
-
-
 // Connect to DB
 mongoose.connect(
     process.env.DB_CONNECTION, 
