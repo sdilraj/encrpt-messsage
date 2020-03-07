@@ -1,19 +1,23 @@
 const mongoose = require('mongoose');
 
 const PostSchema = mongoose.Schema({
-    title: {
+    message: {
         type: String,
         required: true //input must not be empty
     },
-    description: {
-        type: String,
-        required: true
-    },
+    
     //date: Data.now
     data: {
         type: Date,
         default: Date.now
+    },
+
+    encrptiontype: {
+        type: String,
+        required: false
+
     }
+
 });
 
 

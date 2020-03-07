@@ -9,15 +9,48 @@ const Post = require('../models/Post');
 router.get('/', async (req, res) => {
     try {
         const posts = await Post.find();
-        res.json(posts);
+        const encryptionPost = posts.map(post => {
+            let encyrptedMessage = null;
+
+            if(post.encryptiontype === "pigLatin") {
+                encyrptedMessage = pigLatin(post.message)
+            } else if (post.encryptiontype === "emoGize") {
+                encryptiontype = emoGize(post.message)
+            } else if (post.encryptiontype === "letterScramble") {
+                encryptiontype = letterScramble(post.message)
+            }
+
+            return {
+                ...post.toJSON(),
+                encyrptedMessage: encyrptedMessage
+            }
+        });
+
+
+        res.json(encryptionPost);
     }
     catch(err) {
         res.json({messsage: err});
     }
 });
 
+function pigLatin(text) {
+    return text; // encrypt the message
+}
+
+function emoGize(text) {
+    return text;
+}
+
+function letterScramble(text) {
+    return text; //random mix letter
+}
 
 
+
+
+
+// pig latin
 //Creating a Post
 router.post('/', async (req,rest) => {
     const post = new Post({
