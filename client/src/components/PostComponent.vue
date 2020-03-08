@@ -2,9 +2,8 @@
 <div>
 
  
-<b-button v-b-modal.modal-1>Add Note</b-button>
-<b-modal id="modal-1" @show="resetModal"
-      @hidden="resetModal" @ok="handleOk" title="Add Your Note">
+<b-button v-b-modal.modal-1.modal-prevent-closing>Add Note</b-button>
+<b-modal id="modal-prevent-closing" @show="resetModal" @hidden="resetModal" @ok="handleOk" title="Add Your Note">
     <form ref="form" @submit.stop.prevent="handleSubmit">
         <b-form-group
           :state="messageState"
@@ -19,10 +18,24 @@
 
             required
           ></b-form-input>
+          
+        </b-form-group>
+
+        <b-form-group
+          :state="encryptionState"
+          label="Encryption Type"
+          label-for="name-input"
+          invalid-feedback="Encryption Type is required"
+        >
+          <b-form-select v-model="selected" :options="options"></b-form-select>
         </b-form-group>
       </form>
   </b-modal>
   <div class ="container">
+
+  
+
+
     <h1> Latest Posts</h1>
     <!-- Create Post HERE -->
 
@@ -38,8 +51,38 @@
      
       <p>{{post.message}}</p>
       <p>{{post.encryptionMessage}}</p>
+
       <button v-on:click="deletePost(post._id)">Delete</button>
-      <button v-on:click="update(post._id)">Update</button>
+      <button v-on:click="openUpdatePost(post)">Update</button>
+      <b-modal ref="update-modal" @show="resetModal" @hidden="resetModal" @ok="updateOk" title="Add Your Note">
+          <form ref="form" @submit.stop.prevent="updateSubmit">
+              <b-form-group
+                :state="messageState"
+                label="Message"
+                label-for="name-input"
+                invalid-feedback="Message is required"
+              >
+                <b-form-input
+      
+                  v-model="message"
+                  :state="messageState"
+
+                  required
+                ></b-form-input>
+                
+              </b-form-group>
+
+              <b-form-group
+                :state="encryptionState"
+                label="Encryption Type"
+                label-for="name-input"
+                invalid-feedback="Encryption Type is required"
+              >
+                <b-form-select v-model="selected" :options="options"></b-form-select>
+              </b-form-group>
+            </form>
+        </b-modal>
+
 
       </div>
     </div>
@@ -58,8 +101,17 @@ export default {
       posts:[],
       error: '',
       messageState: null,
+      encryptionState: null,
       message: '',
-      text: ''
+      id: null,
+      text: '',
+       selected: null,
+        options: [
+          { value: "pigLatin", text: 'Pig latin'},
+          { value: "emoGize", text: 'Emo-gize ' },
+          { value: "letterScramble", text: 'Letter-scramble ' },
+          { value: null, text: 'Nothing'}
+        ]
     }
   },
   created: function() {
@@ -82,9 +134,24 @@ export default {
 
     },
     updatePost: function(id) {
-      PostService.updatePost(id).then(() => {
-        
-      })
+      const payload = {
+        message: this.message,
+        encryptiontype: this.encryptiontype
+      };
+
+      PostService.updatePost(id, payload).then(() => {
+        return PostService.getPosts()
+      }).then(response => {
+        console.log(response);
+        self.posts = response.data;
+
+        // Hide the modal manually
+        self.$nextTick(() => {
+          self.$bvModal.hide('modal-prevent-closing')
+        })
+      });
+
+
     },
 
     checkFormValidity() {
@@ -111,7 +178,44 @@ export default {
         }
 
         PostService.insertPost({
-          message: self.message
+          message: self.message, encryptiontype: self.selected
+        }).then(() => {
+          return PostService.getPosts()
+        }).then(response => {
+          console.log(response);
+          self.posts = response.data;
+
+          // Hide the modal manually
+          self.$nextTick(() => {
+            self.$bvModal.hide('modal-prevent-closing')
+          })
+        });
+      },
+
+      openUpdatePost(post) {
+        this.id = post._id;
+        this.message = post.message;
+        this.encryptiontype = post.encryptiontype;
+
+        this.$refs['update-modal'].show()
+        
+      },
+      updateOk(bvModalEvt) {
+        // Prevent modal from closing
+        bvModalEvt.preventDefault()
+        // Trigger submit handler
+        this.updateSubmit()
+      },
+      updateSubmit() {
+        // Exit when the form isn't valid
+        var self = this;
+
+        if (!this.checkFormValidity()) {
+          return
+        }
+
+        PostService.updatePost({
+          message: self.message, encryptiontype: self.selected
         }).then(() => {
           return PostService.getPosts()
         }).then(response => {
@@ -126,6 +230,7 @@ export default {
       }
 
   }
+
 
 }
 </script>

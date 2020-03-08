@@ -37,7 +37,7 @@ router.get('/', async (req, res) => {
 function pigLatin(text) {
     var newText = text;
     if(newText.slice(0,1).match(/[aeiouAEIOU]/)) {
-        newText = newText + "way";
+        newText = "way" + newText;
     }
     else {
         var moveLetters = "";
@@ -99,9 +99,9 @@ router.get('/:postId', async (req,res) => {
 //Updating a post
 router.post('/:postId', async (req,res) => {
     try {
-        const updatePost = await Post.updateOne(
+        const updatedPost = await Post.findOneAndUpdate(
             { _id: req.params.postId }, 
-            {$set: {title: req.body.title}}
+            {message: req.body.message, encryptiontype: req.body.encryptiontype}
             );
         res.json(updatedPost);
     }
