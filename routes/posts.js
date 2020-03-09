@@ -15,9 +15,12 @@ router.get('/', async (req, res) => {
             if(post.encryptiontype === "pigLatin") {
                 encyrptedMessage = pigLatin(post.message)
             } else if (post.encryptiontype === "emoGize") {
-                encryptiontype = emoGize(post.message)
+                encyrptedMessage = emoGize(post.message)
             } else if (post.encryptiontype === "letterScramble") {
-                encryptiontype = letterScramble(post.message)
+                encyrptedMessage = letterScramble(post.message)
+            }
+            else {
+                encyrptedMessage = post.message;
             }
 
             return {
@@ -51,12 +54,17 @@ function pigLatin(text) {
 }
 
 
+function emoGize (text) {
 
-function emoGize(text) {
-    return text;
+    var result = "";
+    for (var i = 0; i < text.length; i++) {
+        var ascii = text.toLowerCase().charCodeAt(i) - 97;
+        var emoji = String.fromCodePoint(128512 + ascii);
+        result += emoji;
+      }
+
+    return result;
 }
-
-
 
 function letterScramble(text) {
     var scramble = '';

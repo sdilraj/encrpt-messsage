@@ -2,35 +2,40 @@
 <div>
 
  
-<b-button v-b-modal.modal-1.modal-prevent-closing>Add Note</b-button>
-<b-modal id="modal-prevent-closing" @show="resetModal" @hidden="resetModal" @ok="handleOk" title="Add Your Note">
-    <form ref="form" @submit.stop.prevent="handleSubmit">
+<b-button v-on:click="openAddPost()">Add Note</b-button>
+<b-modal
+      id="modal-prevent-closing"
+      ref="modal"
+      title="Submit Your Name"
+      @show="resetModal"
+      @hidden="resetModal"
+      @ok="handleOk"
+    >
+      <form ref="form" @submit.stop.prevent="handleSubmit">
         <b-form-group
-          :state="messageState"
-          label="Message"
+          :state="nameState"
+          label="Name"
           label-for="name-input"
-          invalid-feedback="Message is required"
+          invalid-feedback="Name is required"
         >
           <b-form-input
- 
+            id="name-input"
             v-model="message"
-            :state="messageState"
-
+            :state="nameState"
             required
           ></b-form-input>
-          
         </b-form-group>
 
         <b-form-group
-          :state="encryptionState"
-          label="Encryption Type"
-          label-for="name-input"
-          invalid-feedback="Encryption Type is required"
-        >
-          <b-form-select v-model="selected" :options="options"></b-form-select>
-        </b-form-group>
+                :state="encryptionState"
+                label="Encryption Type"
+               label-for="name-input"
+                invalid-feedback="Encryption Type is required"
+             >
+                <b-form-select v-model="selected" :options="options"></b-form-select>
+              </b-form-group>
       </form>
-  </b-modal>
+    </b-modal>
   <div class ="container">
 
   
@@ -49,41 +54,12 @@
         v-bind:key="post._id"
       >
      
-      <p>{{post.message}}</p>
-      <p>{{post.encryptionMessage}}</p>
+      <p>Message: {{post.message}}</p>
+      <p>Encrypted Message: {{post.encyrptedMessage}}</p>
+      <p>Encyrption Type: {{post.encryptiontype}}</p>
 
       <button v-on:click="deletePost(post._id)">Delete</button>
-      <button v-on:click="openUpdatePost(post)">Update</button>
-      <b-modal ref="update-modal" @show="resetModal" @hidden="resetModal" @ok="updateOk" title="Add Your Note">
-          <form ref="form" @submit.stop.prevent="updateSubmit">
-              <b-form-group
-                :state="messageState"
-                label="Message"
-                label-for="name-input"
-                invalid-feedback="Message is required"
-              >
-                <b-form-input
-      
-                  v-model="message"
-                  :state="messageState"
-
-                  required
-                ></b-form-input>
-                
-              </b-form-group>
-
-              <b-form-group
-                :state="encryptionState"
-                label="Encryption Type"
-                label-for="name-input"
-                invalid-feedback="Encryption Type is required"
-              >
-                <b-form-select v-model="selected" :options="options"></b-form-select>
-              </b-form-group>
-            </form>
-        </b-modal>
-
-
+      <button v-b-modal.modal-prevent-closing  v-on:click="openUpdatePost(post)">Update</button>
       </div>
     </div>
   </div>
@@ -100,11 +76,16 @@ export default {
     return {
       posts:[],
       error: '',
+      name: '',
+      nameState: null,
+      submittedNames: [],
+      mode: '',
       messageState: null,
       encryptionState: null,
       message: '',
       id: null,
       text: '',
+      payload : {},
        selected: null,
         options: [
           { value: "pigLatin", text: 'Pig latin'},
@@ -113,6 +94,7 @@ export default {
           { value: null, text: 'Nothing'}
         ]
     }
+     
   },
   created: function() {
     PostService.getPosts().then((response) => {
@@ -154,14 +136,15 @@ export default {
 
     },
 
-    checkFormValidity() {
+    
+      checkFormValidity() {
         const valid = this.$refs.form.checkValidity()
-        this.messageState = valid
+        this.nameState = valid
         return valid
       },
       resetModal() {
-        this.message = ''
-        this.messageState = null
+        this.name = ''
+        this.nameState = null
       },
       handleOk(bvModalEvt) {
         // Prevent modal from closing
@@ -171,12 +154,16 @@ export default {
       },
       handleSubmit() {
         // Exit when the form isn't valid
-        var self = this;
 
+        var self = this;
         if (!this.checkFormValidity()) {
           return
         }
 
+        if (this.mode === "EDIT") {
+          this.updateSubmit();
+        }
+        else {
         PostService.insertPost({
           message: self.message, encryptiontype: self.selected
         }).then(() => {
@@ -184,21 +171,29 @@ export default {
         }).then(response => {
           console.log(response);
           self.posts = response.data;
-
           // Hide the modal manually
           self.$nextTick(() => {
             self.$bvModal.hide('modal-prevent-closing')
           })
         });
-      },
+        }
 
+      },
+      openAddPost() {
+        this.id = null;
+        this.message = "";
+        this.selected = null;
+
+        this.mode = "ADD";
+        this.$bvModal.show('modal-prevent-closing')
+      },
       openUpdatePost(post) {
         this.id = post._id;
         this.message = post.message;
-        this.encryptiontype = post.encryptiontype;
+        this.selected = post.encryptiontype;
 
-        this.$refs['update-modal'].show()
-        
+        this.mode = "EDIT";
+        this.$bvModal.show('modal-prevent-closing')
       },
       updateOk(bvModalEvt) {
         // Prevent modal from closing
@@ -214,7 +209,7 @@ export default {
           return
         }
 
-        PostService.updatePost({
+        PostService.updatePost(self.id, {
           message: self.message, encryptiontype: self.selected
         }).then(() => {
           return PostService.getPosts()
